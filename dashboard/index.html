@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Risk Prediction Dashboard | Nexus Strategies</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+    <!-- Login/Register Modal -->
+    <div id="authModal" class="modal active">
+        <div class="auth-container">
+            <div class="auth-header">
+                <div class="logo-icon">NS</div>
+                <h1>Student Risk Prediction System</h1>
+                <p class="auth-subtitle">Nexus Strategies Analytics Platform</p>
+            </div>
+            
+            <!-- Login Form -->
+            <div id="loginForm" class="auth-form active">
+                <h2>Login to Dashboard</h2>
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="loginEmail" required placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="loginPassword" required placeholder="Enter your password">
+                    </div>
+                    <button type="submit" class="auth-btn">Login</button>
+                </form>
+                <p class="auth-switch">Don't have an account? <a href="#" onclick="switchToRegister()">Register here</a></p>
+            </div>
+            
+            <!-- Register Form -->
+            <div id="registerForm" class="auth-form">
+                <h2>Create Account</h2>
+                <form onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="registerName" required placeholder="Enter your full name">
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="registerEmail" required placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="registerPassword" required placeholder="Create a password" minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Password</label>
+                        <input type="password" id="registerConfirmPassword" required placeholder="Confirm your password" minlength="6">
+                    </div>
+                    <button type="submit" class="auth-btn">Create Account</button>
+                </form>
+                <p class="auth-switch">Already have an account? <a href="#" onclick="switchToLogin()">Login here</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard (Hidden until login) -->
+    <div id="mainDashboard" style="display: none;">
+        <!-- Navigation Bar -->
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <div class="logo-icon">NS</div>
+                    <div>
+                        <h1 class="nav-title">Student Risk Prediction System</h1>
+                        <p class="nav-subtitle">Nexus Strategies Analytics</p>
+                    </div>
+                </div>
+                <div class="nav-right">
+                    <div class="nav-tabs">
+                        <button class="nav-tab active" data-tab="overview">Overview</button>
+                        <button class="nav-tab" data-tab="risk-analysis">Risk Analysis</button>
+                        <button class="nav-tab" data-tab="students">Student Profiles</button>
+                        <button class="nav-tab" data-tab="documentation">Documentation</button>
+                    </div>
+                    <div class="user-menu">
+                        <span id="userName" class="user-name">User</span>
+                        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Container -->
+        <div class="main-container">
+            <!-- Filter Panel -->
+            <div class="filter-panel">
+                <h3 class="filter-title">Filter Dashboard</h3>
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label for="departmentFilter">Department</label>
+                        <select id="departmentFilter" class="filter-select">
+                            <option value="all">All Departments</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="genderFilter">Gender</label>
+                        <select id="genderFilter" class="filter-select">
+                            <option value="all">All Genders</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="riskFilter">Risk Category</label>
+                        <select id="riskFilter" class="filter-select">
+                            <option value="all">All Risk Levels</option>
+                            <option value="High">High Risk</option>
+                            <option value="Medium">Medium Risk</option>
+                            <option value="Low">Low Risk</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="semesterFilter">Semester</label>
+                        <select id="semesterFilter" class="filter-select">
+                            <option value="all">All Semesters</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="resetFilters" class="reset-btn">Reset All Filters</button>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="overview" class="tab-content active">
+                <!-- KPI Cards -->
+                <div class="kpi-section">
+                    <div class="kpi-card kpi-blue">
+                        <div class="kpi-icon">📊</div>
+                        <div class="kpi-content">
+                            <p class="kpi-label">Average GPA</p>
+                            <h2 class="kpi-value" id="avgGPA">0.00</h2>
+                            <span class="kpi-subtitle">Out of 4.0</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card kpi-gold">
+                        <div class="kpi-icon">📈</div>
+                        <div class="kpi-content">
+                            <p class="kpi-label">Avg Attendance</p>
+                            <h2 class="kpi-value" id="avgAttendance">0%</h2>
+                            <span class="kpi-subtitle">Based on selected filters</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card kpi-red">
+                        <div class="kpi-icon">⚠️</div>
+                        <div class="kpi-content">
+                            <p class="kpi-label">High Risk Students</p>
+                            <h2 class="kpi-value" id="highRiskPercent">0%</h2>
+                            <span class="kpi-subtitle" id="highRiskCount">0 students</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card kpi-green">
+                        <div class="kpi-icon">👥</div>
+                        <div class="kpi-content">
+                            <p class="kpi-label">Total Students</p>
+                            <h2 class="kpi-value" id="totalStudents">0</h2>
+                            <span class="kpi-subtitle">In dataset</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="charts-grid">
+                    <div class="chart-card chart-medium">
+                        <h3 class="chart-title">Risk Distribution</h3>
+                        <div class="chart-container">
+                            <canvas id="riskDonutChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card chart-medium">
+                        <h3 class="chart-title">Department-wise Average GPA</h3>
+                        <div class="chart-container">
+                            <canvas id="deptGPAChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card chart-large">
+                        <h3 class="chart-title">GPA vs Risk Level Scatter Plot</h3>
+                        <div class="chart-container">
+                            <canvas id="gpaRiskScatter"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card chart-large">
+                        <h3 class="chart-title">Attendance vs GPA Bubble Chart</h3>
+                        <div class="chart-container">
+                            <canvas id="attendanceGPABubble"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card chart-medium">
+                        <h3 class="chart-title">Gender-based Risk Comparison</h3>
+                        <div class="chart-container">
+                            <canvas id="genderRiskChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card chart-medium">
+                        <h3 class="chart-title">Semester-wise GPA Trend</h3>
+                        <div class="chart-container">
+                            <canvas id="semesterTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="risk-analysis" class="tab-content">
+                <div class="charts-grid">
+                    <div class="chart-card chart-full">
+                        <h3 class="chart-title">Risk Heatmap by Department & Semester</h3>
+                        <div class="heatmap-container" id="riskHeatmap"></div>
+                    </div>
+
+                    <div class="chart-card chart-large">
+                        <h3 class="chart-title">Department Risk Distribution</h3>
+                        <div class="chart-container">
+                            <canvas id="deptRiskChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card chart-large">
+                        <h3 class="chart-title">Risk Score Distribution</h3>
+                        <div class="chart-container">
+                            <canvas id="riskScoreDistribution"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="students" class="tab-content">
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3 class="chart-title">Student Risk Leaderboard</h3>
+                        <input type="text" id="searchStudent" class="search-input" placeholder="Search by name or ID...">
+                    </div>
+                    <div class="table-container">
+                        <table id="studentTable">
+                            <thead>
+                                <tr>
+                                    <th data-sort="StudentID">Student ID ↕</th>
+                                    <th data-sort="Name">Name ↕</th>
+                                    <th data-sort="Department">Department ↕</th>
+                                    <th data-sort="GPA">GPA ↕</th>
+                                    <th data-sort="Attendance">Attendance ↕</th>
+                                    <th data-sort="RiskCategory">Risk Level ↕</th>
+                                    <th data-sort="RiskScore">Risk Score ↕</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentTableBody">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="pagination"></div>
+                </div>
+            </div>
+
+            <div id="documentation" class="tab-content">
+                <div class="doc-container">
+                    <h2 class="doc-main-title">Dashboard Documentation</h2>
+                    
+                    <!-- Risk Formula -->
+                    <div class="doc-section">
+                        <h3>📐 Risk Score Calculation Formula</h3>
+                        <div class="formula-box">
+                            <p class="formula">Risk Score = (0.5 × GPA_Component + 0.3 × Attendance_Component + Financial_Flag) × 100</p>
+                        </div>
+                        <div class="doc-content">
+                            <h4>Components Breakdown:</h4>
+                            <ul>
+                                <li><strong>GPA Component:</strong> (4.0 - Student_GPA) / 4.0</li>
+                                <li><strong>Attendance Component:</strong> (100 - Student_Attendance) / 100</li>
+                                <li><strong>Financial Flag:</strong> 0.15 if Fee Balance > $0, else 0</li>
+                            </ul>
+                            <h4>Risk Categories:</h4>
+                            <ul>
+                                <li><span class="risk-badge risk-low">Low Risk</span>: Score < 30</li>
+                                <li><span class="risk-badge risk-medium">Medium Risk</span>: Score 30-60</li>
+                                <li><span class="risk-badge risk-high">High Risk</span>: Score > 60</li>
+                            </ul>
+                            <h4>Example Calculation:</h4>
+                            <div class="example-box">
+                                <p>Student: GPA = 2.5, Attendance = 70%, Fee Balance = $1200</p>
+                                <p>GPA Component = (4.0 - 2.5) / 4.0 = 0.375</p>
+                                <p>Attendance Component = (100 - 70) / 100 = 0.30</p>
+                                <p>Financial Flag = 0.15 (has balance)</p>
+                                <p><strong>Risk Score = (0.5 × 0.375 + 0.3 × 0.30 + 0.15) × 100 = 42.75</strong></p>
+                                <p>Category: <span class="risk-badge risk-medium">Medium Risk</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Graph Explanations -->
+                    <div class="doc-section">
+                        <h3>📊 Chart Explanations</h3>
+                        
+                        <div class="chart-doc">
+                            <h4>1. Risk Distribution (Donut Chart)</h4>
+                            <p><strong>Purpose:</strong> Shows the proportion of students in each risk category.</p>
+                            <p><strong>How to Read:</strong> Each segment represents a risk level. Larger segments indicate more students in that category.</p>
+                            <p><strong>Use Case:</strong> Quick overview of overall student risk distribution. Ideal for presentations and executive summaries.</p>
+                        </div>
+
+                        <div class="chart-doc">
+                            <h4>2. Department-wise Average GPA (Bar Chart)</h4>
+                            <p><strong>Purpose:</strong> Compare academic performance across different departments.</p>
+                            <p><strong>How to Read:</strong> Taller bars indicate higher average GPA. Scale is 0-4.0.</p>
+                            <p><strong>Use Case:</strong> Identify departments needing additional academic support.</p>
+                        </div>
+
+                        <div class="chart-doc">
+                            <h4>3. GPA vs Risk Level (Scatter Plot)</h4>
+                            <p><strong>Purpose:</strong> Visualize correlation between GPA and risk scores.</p>
+                            <p><strong>How to Read:</strong> X-axis = GPA, Y-axis = Risk Score. Colors indicate risk level.</p>
+                            <p><strong>Pattern:</strong> Lower GPA typically correlates with higher risk scores (upper-left area).</p>
+                            <p><strong>Use Case:</strong> Identify outliers and understand GPA-risk relationship.</p>
+                        </div>
+
+                        <div class="chart-doc">
+                            <h4>4. Attendance vs GPA (Bubble Chart)</h4>
+                            <p><strong>Purpose:</strong> Show three-dimensional relationship between attendance, GPA, and risk.</p>
+                            <p><strong>How to Read:</strong> X-axis = Attendance %, Y-axis = GPA, Bubble size = Risk Score.</p>
+                            <p><strong>Pattern:</strong> Higher attendance generally correlates with higher GPA and lower risk.</p>
+                            <p><strong>Use Case:</strong> Identify students with good attendance but low GPA (may need learning support).</p>
+                        </div>
+
+                        <div class="chart-doc">
+                            <h4>5. Gender-based Risk Comparison (Stacked Bar Chart)</h4>
+                            <p><strong>Purpose:</strong> Compare risk distribution across gender categories.</p>
+                            <p><strong>How to Read:</strong> Each bar shows total students per gender, divided by risk level.</p>
+                            <p><strong>Use Case:</strong> Ensure equitable support across all demographic groups.</p>
+                        </div>
+
+                        <div class="chart-doc">
+                            <h4>6. Semester-wise GPA Trend (Line Chart)</h4>
+                            <p><strong>Purpose:</strong> Track average GPA progression across semesters.</p>
+                            <p><strong>How to Read:</strong> Upward slopes indicate improvement, downward slopes indicate decline.</p>
+                            <p><strong>Use Case:</strong> Monitor effectiveness of academic interventions over time.</p>
+                        </div>
+
+                        <div class="chart-doc">
+                            <h4>7. Risk Heatmap (Grid Visualization)</h4>
+                            <p><strong>Purpose:</strong> Show risk levels by department and semester simultaneously.</p>
+                            <p><strong>How to Read:</strong> Colors indicate average risk: Green (low), Yellow (medium), Red (high).</p>
+                            <p><strong>Use Case:</strong> Identify specific department-semester combinations needing intervention.</p>
+                        </div>
+
+                        <div class="chart-doc">
+                            <h4>8. Department Risk Distribution (Horizontal Stacked Bar)</h4>
+                            <p><strong>Purpose:</strong> Compare risk distribution within each department.</p>
+                            <p><strong>How to Read:</strong> Longer bars indicate more students. Colors show risk breakdown.</p>
+                            <p><strong>Use Case:</strong> Prioritize departmental interventions based on high-risk student counts.</p>
+                        </div>
+
+                        <div class="chart-doc">
+                            <h4>9. Risk Score Distribution (Histogram)</h4>
+                            <p><strong>Purpose:</strong> Show frequency distribution of risk scores.</p>
+                            <p><strong>How to Read:</strong> X-axis shows score ranges, Y-axis shows number of students.</p>
+                            <p><strong>Pattern:</strong> Normal distribution indicates balanced risk across population.</p>
+                            <p><strong>Use Case:</strong> Understand overall risk profile and identify concentration points.</p>
+                        </div>
+                    </div>
+
+                    <!-- GitHub Deployment -->
+                    <div class="doc-section">
+                        <h3>🚀 GitHub Pages Deployment Guide</h3>
+                        <div class="doc-content">
+                            <div class="step-box">
+                                <h4>Step 1: Download Dashboard Files</h4>
+                                <p>Copy all files from the dashboard folder to your computer:</p>
+                                <ul>
+                                    <li>index.html</li>
+                                    <li>style.css</li>
+                                    <li>script.js</li>
+                                    <li>data/Student_Risk_Dataset_2200.csv</li>
+                                </ul>
+                            </div>
+
+                            <div class="step-box">
+                                <h4>Step 2: Create GitHub Repository</h4>
+                                <ol>
+                                    <li>Go to <a href="https://github.com" target="_blank">GitHub.com</a> and login</li>
+                                    <li>Click the "+" icon in top-right → "New repository"</li>
+                                    <li>Name: <code>student-risk-dashboard</code></li>
+                                    <li>Make it <strong>Public</strong></li>
+                                    <li>Check "Add a README file"</li>
+                                    <li>Click "Create repository"</li>
+                                </ol>
+                            </div>
+
+                            <div class="step-box">
+                                <h4>Step 3: Upload Files</h4>
+                                <ol>
+                                    <li>In your repository, click "Add file" → "Upload files"</li>
+                                    <li>Drag and drop all dashboard files</li>
+                                    <li>Make sure to upload the <code>data</code> folder with CSV file</li>
+                                    <li>Click "Commit changes"</li>
+                                </ol>
+                            </div>
+
+                            <div class="step-box">
+                                <h4>Step 4: Enable GitHub Pages</h4>
+                                <ol>
+                                    <li>Go to repository "Settings" tab</li>
+                                    <li>Scroll down to "Pages" in left sidebar</li>
+                                    <li>Under "Source", select <strong>"Deploy from a branch"</strong></li>
+                                    <li>Choose branch: <strong>main</strong></li>
+                                    <li>Click "Save"</li>
+                                    <li>Wait 2-3 minutes for deployment</li>
+                                </ol>
+                            </div>
+
+                            <div class="step-box success-box">
+                                <h4>✅ Step 5: Access Your Dashboard</h4>
+                                <p>Your dashboard will be live at:</p>
+                                <code>https://YOUR_USERNAME.github.io/student-risk-dashboard/</code>
+                                <p style="margin-top: 1rem;"><strong>Example:</strong> If your username is "johndoe", the URL will be:</p>
+                                <code>https://johndoe.github.io/student-risk-dashboard/</code>
+                            </div>
+
+                            <div class="step-box">
+                                <h4>Alternative: Using GitHub Desktop</h4>
+                                <ol>
+                                    <li>Download <a href="https://desktop.github.com" target="_blank">GitHub Desktop</a></li>
+                                    <li>Clone your repository</li>
+                                    <li>Copy dashboard files to the cloned folder</li>
+                                    <li>Commit changes with message: "Add dashboard files"</li>
+                                    <li>Push to origin</li>
+                                    <li>Enable Pages in repository settings</li>
+                                </ol>
+                            </div>
+
+                            <div class="step-box">
+                                <h4>⚙️ Troubleshooting</h4>
+                                <ul>
+                                    <li><strong>404 Error:</strong> Wait 5 minutes after enabling Pages, then refresh</li>
+                                    <li><strong>Charts not loading:</strong> Check browser console (F12) for errors</li>
+                                    <li><strong>CSV not found:</strong> Ensure data folder structure is maintained</li>
+                                    <li><strong>Blank page:</strong> Verify index.html is in repository root</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Profile Modal -->
+        <div id="studentModal" class="modal">
+            <div class="modal-content">
+                <span class="modal-close">&times;</span>
+                <div class="modal-header">
+                    <h2 id="modalStudentName">Student Name</h2>
+                    <span id="modalRiskBadge" class="risk-badge">Medium</span>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-grid">
+                        <div class="modal-field">
+                            <label>Student ID</label>
+                            <p id="modalStudentID">-</p>
+                        </div>
+                        <div class="modal-field">
+                            <label>Department</label>
+                            <p id="modalDepartment">-</p>
+                        </div>
+                        <div class="modal-field">
+                            <label>Gender</label>
+                            <p id="modalGender">-</p>
+                        </div>
+                        <div class="modal-field">
+                            <label>Semester</label>
+                            <p id="modalSemester">-</p>
+                        </div>
+                        <div class="modal-field">
+                            <label>GPA</label>
+                            <p id="modalGPA" class="highlight-value">-</p>
+                        </div>
+                        <div class="modal-field">
+                            <label>Attendance</label>
+                            <p id="modalAttendance" class="highlight-value">-</p>
+                        </div>
+                        <div class="modal-field">
+                            <label>Fee Balance</label>
+                            <p id="modalFeeBalance">-</p>
+                        </div>
+                        <div class="modal-field">
+                            <label>Risk Score</label>
+                            <p id="modalRiskScore" class="highlight-value">-</p>
+                        </div>
+                    </div>
+                    <div class="modal-chart">
+                        <h4>Performance Metrics</h4>
+                        <canvas id="modalChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2025 Nexus Strategies | Student Risk Prediction System</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
